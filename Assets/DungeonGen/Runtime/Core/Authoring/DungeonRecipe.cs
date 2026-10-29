@@ -20,6 +20,7 @@ namespace DungeonGen.Core
 
         [Header("Content")]
         public RoomTemplateLibrary templates;
+        public Tileset tileset;
         public CorridorSettings corridors = new CorridorSettings();
 
         [Header("Layout")]

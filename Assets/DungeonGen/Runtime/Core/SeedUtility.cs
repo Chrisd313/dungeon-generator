@@ -32,6 +32,17 @@ namespace DungeonGen.Core
             return new Pcg32(Derive(masterSeed, stage, attempt));
         }
 
+        /// <summary>
+        /// Order-independent random value in [0, 1) for a grid cell. Use where results must not depend on
+        /// the order cells are visited in, e.g. picking floor variants while rendering.
+        /// </summary>
+        public static float CellHash01(int seed, int x, int y)
+        {
+            ulong h = Mix((uint)seed ^ ((ulong)(uint)x << 32));
+            h = Mix(h ^ (uint)y);
+            return (uint)(h >> 40) * (1f / 16777216f);
+        }
+
         // SplitMix64 finalizer.
         static ulong Mix(ulong z)
         {

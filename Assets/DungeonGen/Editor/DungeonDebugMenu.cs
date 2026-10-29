@@ -3,6 +3,7 @@ using System.IO;
 using DungeonGen.Core;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using Debug = UnityEngine.Debug;
 
 namespace DungeonGen.Editor
@@ -60,6 +61,64 @@ namespace DungeonGen.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
             File.WriteAllBytes(path, tex.EncodeToPNG());
             Object.DestroyImmediate(tex);
+        }
+
+        /// <summary>
+        /// Batch-mode entry point (needs graphics, so no <c>-nographics</c>):
+        /// <c>-executeMethod DungeonGen.Editor.DungeonDebugMenu.ExportTilemapSnapshot</c>.
+        /// Renders seed 0 with the placeholder tileset through a camera to Logs/DungeonSnapshots/tiles_0.png.
+        /// </summary>
+        public static void ExportTilemapSnapshot()
+        {
+            Tileset tileset = PlaceholderTilesetGenerator.GetOrCreate();
+            var gridObject = new GameObject("Grid", typeof(Grid));
+            var cameraObject = new GameObject("Camera", typeof(Camera));
+            var rt = new RenderTexture(1024, 1024, 24);
+            var shot = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+            try
+            {
+                Tilemap floor = NewTilemap("Floor", gridObject.transform, 0);
+                Tilemap walls = NewTilemap("Walls", gridObject.transform, 1);
+
+                var view = gridObject.AddComponent<DungeonDebugView>();
+                view.tileset = tileset;
+                view.floorTilemap = floor;
+                view.wallTilemap = walls;
+                view.showPreviewSprite = false;
+                view.Generate();
+
+                RectInt b = view.Result.grid.Bounds;
+                var cam = cameraObject.GetComponent<Camera>();
+                cam.orthographic = true;
+                cam.orthographicSize = Mathf.Max(b.width, b.height) * 0.5f + 1f;
+                cam.transform.position = new Vector3(b.center.x, b.center.y, -10f);
+                cam.backgroundColor = Color.black;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.targetTexture = rt;
+                cam.Render();
+
+                RenderTexture.active = rt;
+                shot.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                shot.Apply();
+                RenderTexture.active = null;
+                Directory.CreateDirectory("Logs/DungeonSnapshots");
+                File.WriteAllBytes("Logs/DungeonSnapshots/tiles_0.png", shot.EncodeToPNG());
+            }
+            finally
+            {
+                Object.DestroyImmediate(gridObject);
+                Object.DestroyImmediate(cameraObject);
+                Object.DestroyImmediate(rt);
+                Object.DestroyImmediate(shot);
+            }
+        }
+
+        static Tilemap NewTilemap(string name, Transform parent, int order)
+        {
+            var go = new GameObject(name, typeof(Tilemap), typeof(TilemapRenderer));
+            go.transform.SetParent(parent, false);
+            go.GetComponent<TilemapRenderer>().sortingOrder = order;
+            return go.GetComponent<Tilemap>();
         }
 
         /// <summary>
