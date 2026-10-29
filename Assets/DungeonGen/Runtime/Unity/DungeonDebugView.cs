@@ -84,7 +84,7 @@ namespace DungeonGen
             if (_result == null || !_result.success) return;
 
             DungeonGrid grid = _result.grid;
-            Vector3 cellSize = new Vector3(1f, 1f, 0f);
+            Vector3 cellSize = new Vector3(1f, 1f, 0.1f);
             Matrix4x4 previous = Gizmos.matrix;
             Gizmos.matrix = transform.localToWorldMatrix;
 
