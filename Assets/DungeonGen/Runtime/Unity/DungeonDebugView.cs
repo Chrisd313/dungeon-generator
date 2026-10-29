@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DungeonGen.Core;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace DungeonGen
 {
@@ -16,6 +17,15 @@ namespace DungeonGen
         public DungeonRecipe recipe;
         public int seed;
         public bool drawFlowGraph = true;
+        [Tooltip("Flat colour preview of the grid. Turn off when rendering to tilemaps.")]
+        public bool showPreviewSprite = true;
+
+        [Header("Tilemap output (optional)")]
+        [Tooltip("Overrides the recipe's tileset. Required when no recipe is assigned.")]
+        public Tileset tileset;
+        public Tilemap floorTilemap;
+        public Tilemap wallTilemap;
+        public bool addWallCollider = true;
 
         DungeonResult _result;
         DungeonRecipe _fallbackRecipe;
@@ -39,6 +49,20 @@ namespace DungeonGen
             if (!_result.success)
                 Debug.LogWarning($"[DungeonGen] Seed {seed}: {_result.failureReason}", this);
             RebuildPreview();
+            RenderTilemaps(r);
+        }
+
+        void RenderTilemaps(DungeonRecipe r)
+        {
+            if (floorTilemap == null || wallTilemap == null) return;
+            Tileset tiles = tileset != null ? tileset : r.tileset;
+            if (tiles == null || _result == null || !_result.success)
+            {
+                DungeonRenderer.Clear(floorTilemap, wallTilemap);
+                return;
+            }
+            DungeonRenderer.Render(_result, tiles, floorTilemap, wallTilemap);
+            if (addWallCollider) DungeonRenderer.SetupWallCollider(wallTilemap);
         }
 
         [ContextMenu("Next Seed")]
@@ -77,6 +101,7 @@ namespace DungeonGen
 
             _previewTexture = DungeonPreviewTexture.Create(_result);
             _previewTexture.hideFlags = HideFlags.HideAndDontSave;
+            if (!showPreviewSprite) return;
             _previewSprite = Sprite.Create(_previewTexture,
                 new Rect(0, 0, _previewTexture.width, _previewTexture.height), Vector2.zero, 1f);
             _previewSprite.hideFlags = HideFlags.HideAndDontSave;
