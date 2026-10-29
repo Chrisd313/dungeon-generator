@@ -5,8 +5,8 @@ using UnityEngine;
 namespace DungeonGen
 {
     /// <summary>
-    /// Development aid: generates a dungeon and draws it with Gizmos in the Scene view.
-    /// With no recipe assigned it uses a built-in set of rectangle rooms.
+    /// Development aid: generates a dungeon and shows it in the scene as a sprite, with Gizmo overlays
+    /// for the flow graph. With no recipe assigned it uses a built-in set of rectangle rooms.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("DungeonGen/Dungeon Debug View")]
@@ -21,7 +21,15 @@ namespace DungeonGen
         DungeonRecipe _fallbackRecipe;
         readonly List<Object> _fallbackAssets = new List<Object>();
 
+        GameObject _previewObject;
+        Texture2D _previewTexture;
+        Sprite _previewSprite;
+        Material _previewMaterial;
+
         public DungeonResult Result => _result;
+
+        /// <summary>The current dungeon drawn as a texture, one pixel per cell. Null if generation failed.</summary>
+        public Texture2D PreviewTexture => _previewTexture;
 
         [ContextMenu("Generate")]
         public void Generate()
@@ -30,6 +38,7 @@ namespace DungeonGen
             _result = DungeonGenerator.Generate(r, seed);
             if (!_result.success)
                 Debug.LogWarning($"[DungeonGen] Seed {seed}: {_result.failureReason}", this);
+            RebuildPreview();
         }
 
         [ContextMenu("Next Seed")]
@@ -43,15 +52,57 @@ namespace DungeonGen
 
         void OnValidate()
         {
-            if (isActiveAndEnabled) Generate();
+#if UNITY_EDITOR
+            // Creating objects inside OnValidate isn't allowed, so regenerate on the next editor tick.
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this != null && isActiveAndEnabled) Generate();
+            };
+#endif
         }
 
         void OnDisable()
         {
+            DestroyPreview();
             foreach (Object o in _fallbackAssets)
                 if (o != null) DestroyImmediate(o);
             _fallbackAssets.Clear();
             _fallbackRecipe = null;
+        }
+
+        void RebuildPreview()
+        {
+            DestroyPreview();
+            if (_result == null || !_result.success) return;
+
+            _previewTexture = DungeonPreviewTexture.Create(_result);
+            _previewTexture.hideFlags = HideFlags.HideAndDontSave;
+            _previewSprite = Sprite.Create(_previewTexture,
+                new Rect(0, 0, _previewTexture.width, _previewTexture.height), Vector2.zero, 1f);
+            _previewSprite.hideFlags = HideFlags.HideAndDontSave;
+
+            _previewObject = new GameObject("Dungeon Preview") { hideFlags = HideFlags.HideAndDontSave };
+            _previewObject.transform.SetParent(transform, false);
+            RectInt b = _result.grid.Bounds;
+            _previewObject.transform.localPosition = new Vector3(b.xMin, b.yMin, 0f);
+
+            var sr = _previewObject.AddComponent<SpriteRenderer>();
+            sr.sprite = _previewSprite;
+            Shader unlit = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            if (unlit == null) unlit = Shader.Find("Sprites/Default");
+            if (unlit != null)
+            {
+                _previewMaterial = new Material(unlit) { hideFlags = HideFlags.HideAndDontSave };
+                sr.sharedMaterial = _previewMaterial;
+            }
+        }
+
+        void DestroyPreview()
+        {
+            if (_previewObject != null) DestroyImmediate(_previewObject);
+            if (_previewSprite != null) DestroyImmediate(_previewSprite);
+            if (_previewTexture != null) DestroyImmediate(_previewTexture);
+            if (_previewMaterial != null) DestroyImmediate(_previewMaterial);
         }
 
         DungeonRecipe GetFallbackRecipe()
@@ -83,34 +134,13 @@ namespace DungeonGen
         {
             if (_result == null || !_result.success) return;
 
-            DungeonGrid grid = _result.grid;
-            Vector3 cellSize = new Vector3(1f, 1f, 0.1f);
             Matrix4x4 previous = Gizmos.matrix;
             Gizmos.matrix = transform.localToWorldMatrix;
-
-            RectInt b = grid.Bounds;
-            for (int y = b.yMin; y < b.yMax; y++)
-            for (int x = b.xMin; x < b.xMax; x++)
-            {
-                var p = new Vector2Int(x, y);
-                CellType type = grid.Get(p);
-                if (type == CellType.Empty) continue;
-
-                if (type == CellType.Wall) Gizmos.color = new Color(0.15f, 0.15f, 0.18f);
-                else
-                {
-                    int roomId = grid.GetRoomId(p);
-                    Gizmos.color = roomId < 0
-                        ? new Color(0.75f, 0.7f, 0.6f)
-                        : Color.HSVToRGB(roomId * 0.618034f % 1f, 0.45f, 0.85f);
-                }
-                Gizmos.DrawCube(CellCentre(p), cellSize * 0.95f);
-            }
 
             Gizmos.color = Color.white;
             foreach (PlacedRoom room in _result.rooms)
                 foreach (int s in room.usedSockets)
-                    Gizmos.DrawWireCube(CellCentre(room.SocketCell(s)), cellSize * 0.6f);
+                    Gizmos.DrawWireCube(CellCentre(room.SocketCell(s)), new Vector3(0.6f, 0.6f, 0.1f));
 
             if (drawFlowGraph)
             {
@@ -121,15 +151,13 @@ namespace DungeonGen
                 }
             }
 
-            Gizmos.color = Color.green;
-            Gizmos.DrawSphere(CellCentre(_result.playerStart), 0.4f);
             Gizmos.color = Color.red;
             Gizmos.DrawSphere(RoomCentre(_result.flow.EndId), 0.4f);
 
             Gizmos.matrix = previous;
         }
 
-        static Vector3 CellCentre(Vector2Int p) => new Vector3(p.x + 0.5f, p.y + 0.5f, 0f);
+        static Vector3 CellCentre(Vector2Int p) => new Vector3(p.x + 0.5f, p.y + 0.5f, -0.1f);
 
         Vector3 RoomCentre(int roomId)
         {

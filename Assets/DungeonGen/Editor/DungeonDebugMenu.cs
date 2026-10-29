@@ -56,35 +56,7 @@ namespace DungeonGen.Editor
         /// <summary>Writes a dungeon grid as a PNG, 4 pixels per cell. Rooms are tinted by id.</summary>
         public static void ExportPng(DungeonResult result, string path, int pixelsPerCell = 4)
         {
-            DungeonGrid grid = result.grid;
-            var tex = new Texture2D(grid.Width * pixelsPerCell, grid.Height * pixelsPerCell, TextureFormat.RGBA32, false);
-            var pixels = new Color32[tex.width * tex.height];
-            RectInt b = grid.Bounds;
-
-            for (int y = b.yMin; y < b.yMax; y++)
-            for (int x = b.xMin; x < b.xMax; x++)
-            {
-                var p = new Vector2Int(x, y);
-                Color c;
-                switch (grid.Get(p))
-                {
-                    case CellType.Wall: c = new Color(0.2f, 0.2f, 0.24f); break;
-                    case CellType.Floor:
-                        int roomId = grid.GetRoomId(p);
-                        c = roomId < 0 ? new Color(0.8f, 0.75f, 0.6f) : Color.HSVToRGB(roomId * 0.618034f % 1f, 0.45f, 0.9f);
-                        break;
-                    default: c = new Color(0.05f, 0.05f, 0.06f); break;
-                }
-                if (p == result.playerStart) c = Color.green;
-
-                int px = (x - b.xMin) * pixelsPerCell, py = (y - b.yMin) * pixelsPerCell;
-                for (int dy = 0; dy < pixelsPerCell; dy++)
-                for (int dx = 0; dx < pixelsPerCell; dx++)
-                    pixels[(py + dy) * tex.width + px + dx] = c;
-            }
-
-            tex.SetPixels32(pixels);
-            tex.Apply();
+            Texture2D tex = DungeonPreviewTexture.Create(result, pixelsPerCell);
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
             File.WriteAllBytes(path, tex.EncodeToPNG());
             Object.DestroyImmediate(tex);

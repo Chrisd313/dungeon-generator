@@ -23,6 +23,15 @@ namespace DungeonGen.Editor
                     $"{r.rooms.Count} rooms, {r.corridors.Count} corridors, grid {r.grid.Bounds}, " +
                     $"{r.attempts} attempt(s).", MessageType.None);
 
+            Texture2D preview = view.PreviewTexture;
+            if (preview != null)
+            {
+                float width = EditorGUIUtility.currentViewWidth - 40f;
+                float height = Mathf.Min(width * preview.height / preview.width, 400f);
+                Rect rect = GUILayoutUtility.GetRect(width, height, GUILayout.ExpandWidth(true));
+                EditorGUI.DrawPreviewTexture(rect, preview, null, ScaleMode.ScaleToFit);
+            }
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Generate")) Regenerate(view, view.seed);
