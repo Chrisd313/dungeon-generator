@@ -1,0 +1,8 @@
+* text=auto
+*.sh text eol=lf
+*.cs text
+*.asset text
+*.meta text
+*.unity text
+*.prefab text
+*.png binary
