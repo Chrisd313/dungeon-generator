@@ -18,7 +18,7 @@ Working now:
 - **A\* corridors** — turn penalty, configurable width, never cut through rooms.
 - **Connectivity validation** — flood fill checks every room is reachable from the start.
 - **Debug view** — draws the generated grid in the Scene view and the inspector.
-- **Tilemap rendering** (Phase 2, [PR #3](https://github.com/Chrisd313/dungeon-generator/pull/3)) — `Tileset` asset, top-down wall autotiling, weighted floor variants, wall colliders.
+- **Tilemap rendering** — `Tileset` asset, top-down wall autotiling, weighted floor variants, wall colliders.
 
 Planned: flow rules (e.g. "boss room last"), a room template editor window, spawn points with events, a preview window and bake-to-scene. See [Roadmap](#roadmap).
 
@@ -72,7 +72,7 @@ Assets/DungeonGen/
 |---|---|---|
 | 0 | Skeleton, seeded RNG, `DungeonGrid` | Done |
 | 1 | Layout solver, A* corridors, validation, debug view | Done |
-| 2 | Tileset, wall autotiling, Tilemap rendering | In review ([PR #3](https://github.com/Chrisd313/dungeon-generator/pull/3)) |
+| 2 | Tileset, wall autotiling, Tilemap rendering | Done |
 | 3 | Flow rules + recipe | Next |
 | 4 | Room Template Editor window | Planned |
 | 5 | Spawns + events | Planned |
