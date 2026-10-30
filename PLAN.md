@@ -31,8 +31,8 @@ Isometric, visual flow-graph editor, procedural room shapes (caves/stamps), temp
 
 ## 3. Technical constraints
 
-- **Unity version:** minimum 2022.3 LTS (confirm — see Open Questions). Depends on `com.unity.2d.tilemap`.
-- **Layout:** package-style folder with separate assembly definitions:
+- **Unity version:** developed and tested on `6000.2.6f2`; minimum not decided (see Open Questions). Depends on `com.unity.2d.tilemap`.
+- **Layout:** package-style folder with separate assembly definitions. Not a UPM package yet: the repo is a full Unity project, and `package.json`, `Samples~/` and `Documentation~/` are still to come. See the README for current setup.
   ```
   Assets/DungeonGen/
     Runtime/

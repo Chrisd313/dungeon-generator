@@ -24,21 +24,37 @@ Planned: flow rules (e.g. "boss room last"), a room template editor window, spaw
 
 ## Built with
 
-- Unity 6 (`6000.2.6f2`), C#
+- Unity 6, C#
 - `com.unity.2d.tilemap`
 - Unity Test Framework (EditMode tests)
 
 Generation logic lives in `Runtime/Core`. It doesn't use MonoBehaviours, scene access, `UnityEngine.Random` or Tilemap calls, so it is fast and unit-testable.
 
-## Getting started
+## Setup
 
-1. Clone the repo and open the folder in Unity Hub with Unity `6000.2.6f2` (other Unity 6 versions will probably work).
-2. Run **Tools → DungeonGen → Create Debug Dungeon In Scene**.
-3. Select the created object and press **Generate** in the inspector. Change the seed to get a different dungeon.
+### Requirements
 
-Other tools:
+- Unity `6000.2.6f2`. This is the only version the project has been developed and tested on, and the minimum supported version isn't decided yet.
+- No manual package installs: Unity resolves dependencies from `Packages/manifest.json` when the project opens.
 
-- **Tools → DungeonGen → Stress Test Selected Recipe** — generates many seeds from the selected recipe and reports success rate, overlaps and connectivity.
+### Run the project
+
+This repo is a complete Unity project, so that is the supported way to run it today.
+
+1. Clone the repo and open the folder in Unity Hub with Unity `6000.2.6f2`.
+2. Run **Tools → DungeonGen → Create Debug Dungeon In Scene**. This creates a grid with floor and wall tilemaps, generates a placeholder tileset in `Assets/DungeonGen Placeholder/` (ignored by git), renders a first dungeon from built-in rectangle rooms, and selects the object.
+3. In the inspector, press **Next Seed** to get a different dungeon, or **Frame Dungeon** to find it in the Scene view. Assign your own recipe in the **Recipe** field to replace the built-in rooms.
+
+### Use it in another project
+
+DungeonGen isn't a Unity package yet: there is no `package.json`, so it can't be installed through the Package Manager or a Git URL, and `Samples~` and `Documentation~` don't exist yet. Packaging is planned for release prep (Phase 7).
+
+For now, copy `Assets/DungeonGen/` into your project's `Assets/` folder and install **2D Tilemap Editor** (`com.unity.2d.tilemap`) in the Package Manager. This route hasn't been tested yet.
+
+### Other tools
+
+- **Tools → DungeonGen → Stress Test Selected Recipe** — generates 1,000 seeds from the selected recipe and logs success rate and timing.
+- **Tools → DungeonGen → Create Placeholder Tileset** — generates the placeholder tileset on its own.
 - **Assets → Create → DungeonGen** — create a Dungeon Recipe, Room Template, Room Template Library or Tileset.
 
 ## Running tests
@@ -52,7 +68,7 @@ Headless (close the project in the Editor first):
 ./run-tests.sh LayoutStress    # filter by name
 ```
 
-The script assumes Unity is installed at `C:/Program Files/Unity/Hub/Editor/6000.2.6f2`. Set `UNITY` to point it at a different install.
+The script needs a bash shell (Git Bash on Windows) and assumes the default Windows install path, `C:/Program Files/Unity/Hub/Editor/6000.2.6f2`. Set `UNITY` to the Unity executable for any other install.
 
 Tests cover RNG determinism, the grid, flow graph building, A* pathfinding, wall roles, and a 1,000-seed layout stress test (no overlaps, 100% connectivity).
 
